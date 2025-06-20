@@ -1,0 +1,37 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 매일 자정(UTC 기준)에 실행
+  workflow_dispatch:      # 수동으로 실행할 수 있도록 버튼 추가
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Personal Access Token(PAT)을 사용하여 push 권한 확보
+          # 기본 GITHUB_TOKEN은 다른 저장소로의 push 권한이 없음
+          token: ${{ secrets.PAT_FOR_SYNC }}
+          # 동기화 시 전체 히스토리를 가져오도록 fetch-depth: 0 설정
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+      - name: Add Upstream Remote
+        run: git remote add upstream https://github.com/valeman/Transformers_And_LLM_Are_What_You_Dont_Need.git
+
+      - name: Fetch Upstream
+        run: git fetch upstream
+
+      - name: Sync main Branch
+        run: |
+          git checkout main
+          git merge upstream/main
+          git push origin main
